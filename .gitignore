@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Notebooks (examples will be curated separately)
+*.ipynb
