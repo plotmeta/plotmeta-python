@@ -8,6 +8,7 @@ Embed and extract exact plot data from scientific figures.
    :caption: Contents
 
    quickstart
+   matplotlib
    api
 
 Indices

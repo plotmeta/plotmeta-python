@@ -5,7 +5,8 @@ regardless of output format. Only the embedding step differs per extension:
 
     .png  -> compressed text chunk
     .svg  -> namespaced XML element
-    .pdf  -> invisible text + lossless marker
+    .pdf  -> invisible-text base64 block (survives \includegraphics) +
+             human-readable copy; optional after-EOF stdlib marker
 
 So the same data is recoverable whether you save (and load) PNG, SVG or PDF.
 
@@ -45,11 +46,18 @@ def metadata(fig: Figure, keyword: str = DATA_KEY) -> dict[str, str]:
     return {keyword: table.dumps(extract_figure(fig))}
 
 
-def save(fig: Figure, path: str | Path, **savefig_kwargs) -> Path:
+def save(
+    fig: Figure, path: str | Path, *, stdlib_marker: bool = False, **savefig_kwargs
+) -> Path:
     """Save a matplotlib figure with embedded plotmeta, dispatching on format.
 
     Drop-in replacement for ``fig.savefig()``. Supported: .png, .svg, .pdf.
     Extra keyword arguments are forwarded to ``fig.savefig``.
+
+    ``stdlib_marker`` (PDF only): also append the after-EOF marker so ``load()``
+    can read the file with the stdlib alone, without a text extractor. The
+    default base64 channel is already lossless and survives ``\\includegraphics``
+    but requires pypdf (the ``[pdf]`` extra) or ``pdftotext`` to read back.
     """
     from .transports import pdf, png, svg
     from .writers.matplotlib import extract_figure
@@ -63,7 +71,7 @@ def save(fig: Figure, path: str | Path, **savefig_kwargs) -> Path:
     elif suffix == ".svg":
         path.write_bytes(svg.inject(_render(fig, "svg", **savefig_kwargs), payload))
     elif suffix == ".pdf":
-        pdf.save(fig, path, payload, **savefig_kwargs)
+        pdf.save(fig, path, payload, stdlib_marker=stdlib_marker, **savefig_kwargs)
     else:
         raise ValueError(f"Unsupported format: {suffix}. Supported: .png, .svg, .pdf")
 

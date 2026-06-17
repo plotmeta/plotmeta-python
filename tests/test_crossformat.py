@@ -76,10 +76,33 @@ class TestCrossFormatParity:
 
 
 class TestPdfChannels:
-    def test_lossless_marker_present(self, tmp_path: Path):
+    def test_no_stdlib_marker_by_default(self, tmp_path: Path):
+        # the default lossless channel is the in-content-stream base64 block;
+        # the after-EOF marker is opt-in
         fig = _make_figure()
         out = plotmeta.savefig(fig, tmp_path / "fig.pdf")
+        assert b"% plotmeta-data:" not in out.read_bytes()
+        # no marker, so a successful load() necessarily came from the base64
+        # block in the (compressed) content stream
+        assert plotmeta.load(out) == plotmeta.extract(fig)
+
+    def test_stdlib_marker_opt_in(self, tmp_path: Path):
+        fig = _make_figure()
+        out = plotmeta.savefig(fig, tmp_path / "fig.pdf", stdlib_marker=True)
         assert b"% plotmeta-data:" in out.read_bytes()
+        assert plotmeta.load(out) == plotmeta.extract(fig)
+
+    def test_stdlib_marker_read_needs_no_extractor(self, tmp_path: Path, monkeypatch):
+        # with the marker present, load() must not depend on a text extractor
+        fig = _make_figure()
+        out = plotmeta.savefig(fig, tmp_path / "fig.pdf", stdlib_marker=True)
+
+        from plotmeta.transports import pdf
+
+        monkeypatch.setattr(
+            pdf, "_extract_text", lambda *a, **k: pytest.fail("used extractor")
+        )
+        assert plotmeta.load(out) == plotmeta.extract(fig)
 
     @pytest.mark.skipif(
         shutil.which("pdftotext") is None, reason="pdftotext not installed"
