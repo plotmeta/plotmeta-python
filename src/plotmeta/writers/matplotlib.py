@@ -1,9 +1,10 @@
-"""Extract structured data from matplotlib figures."""
+"""Extract structured data from matplotlib figures.
+
+Self-contained extraction module (no plotmeta transport/IO imports) so it can
+become an upstream matplotlib contribution. Saving lives in plotmeta.save.
+"""
 
 from __future__ import annotations
-
-import io
-from pathlib import Path
 
 import numpy as np
 from matplotlib.axes import Axes
@@ -51,21 +52,6 @@ def extract_figure(fig: Figure) -> FigureMeta:
         suptitle=fig._suptitle.get_text() if fig._suptitle else None,
         plots=[extract_axes(ax, i, [nrows, ncols]) for i, ax in enumerate(axes)],
     )
-
-
-def save(fig: Figure, path: str | Path, **savefig_kwargs) -> Path:
-    """Save a matplotlib figure to PNG with embedded plotmeta."""
-    from ..transports import png
-
-    path = Path(path)
-    meta = extract_figure(fig)
-
-    buf = io.BytesIO()
-    fig.savefig(buf, format="png", **savefig_kwargs)
-    enriched = png.inject(buf.getvalue(), meta.to_json())
-    path.write_bytes(enriched)
-
-    return path
 
 
 # -- line plots ---------------------------------------------------------------

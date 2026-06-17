@@ -6,23 +6,34 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .reader import load
+from .save import metadata
+from .save import save as savefig
 from .schema import SCHEMA_VERSION, FigureMeta
 
 if TYPE_CHECKING:
     from matplotlib.figure import Figure
 
 __version__ = "0.1.0"
-__all__ = ["savefig", "load", "to_pandas", "FigureMeta", "SCHEMA_VERSION"]
+__all__ = [
+    "savefig",
+    "metadata",
+    "extract",
+    "load",
+    "to_pandas",
+    "FigureMeta",
+    "SCHEMA_VERSION",
+]
 
 
-def savefig(fig: Figure, path: str | Path, **savefig_kwargs) -> Path:
-    """Save a matplotlib figure with embedded plotmeta.
+def extract(fig: Figure) -> FigureMeta:
+    """Extract plotmeta from a live matplotlib figure as a FigureMeta object.
 
-    Drop-in replacement for fig.savefig() that also embeds structured data.
+    No file is written. Use `metadata(fig)` to feed matplotlib's native
+    `savefig(metadata=...)`, or `savefig(fig, path)` to write a PNG directly.
     """
-    from .writers.matplotlib import save
+    from .writers.matplotlib import extract_figure
 
-    return save(fig, path, **savefig_kwargs)
+    return extract_figure(fig)
 
 
 def to_pandas(
@@ -44,9 +55,7 @@ def to_pandas(
         if meta is None:
             raise ValueError(f"No plotmeta found in {source}")
     else:
-        from .writers.matplotlib import extract_figure
-
-        meta = extract_figure(source)
+        meta = extract(source)
 
     dfs = []
     for plot in meta.plots:

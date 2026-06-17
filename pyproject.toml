@@ -22,11 +22,16 @@ dependencies = []
 
 [project.optional-dependencies]
 matplotlib = ["matplotlib", "numpy"]
+# High-fidelity (render-mode-3) invisible text in PDFs. Without these, PDF
+# embedding falls back to a dependency-free matplotlib alpha=0 text layer.
+pdf = ["pypdf>=4.0", "reportlab>=4.0"]
 dev = [
     "pytest>=8.0",
     "ruff>=0.4",
     "matplotlib",
     "numpy",
+    "pypdf>=4.0",
+    "reportlab>=4.0",
 ]
 docs = [
     "sphinx>=7.0",

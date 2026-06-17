@@ -8,9 +8,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pytest
 
-from plotmeta.schema import FigureMeta
+from plotmeta import table
+from plotmeta.save import save
 from plotmeta.transports import png
-from plotmeta.writers.matplotlib import extract_axes, extract_figure, save
+from plotmeta.writers.matplotlib import extract_axes, extract_figure
 
 
 @pytest.fixture(autouse=True)
@@ -181,7 +182,7 @@ class TestSaveRoundTrip:
         assert out.exists()
 
         raw = png.extract(out.read_bytes())
-        meta = FigureMeta.from_json(raw)
+        meta = table.loads(raw)
         assert meta.plots[0].series[0].label == "test"
         assert meta.plots[0].x_axis.units == "m"
 
